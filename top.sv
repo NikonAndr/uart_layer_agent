@@ -14,12 +14,17 @@ module top;
 
     bit rst;
 
-    initial begin
+    /*initial begin
         //Reset before running program
         rst = 1'b1;
         #50ns;
         rst = 1'b0;
+    end*/
+    initial begin
+          $dumpfile("uart_test.vcd");  // nazwa pliku
+          $dumpvars(0, top);           // 0 = dump wszystko w module top
     end
+
 
     assign vif_A1.rst = rst;
     assign vif_A2.rst = rst;
@@ -28,28 +33,43 @@ module top;
     assign vif_A2.rx = vif_A1.tx;
 
     initial begin
-        //Master Agent Config 
-        cfg_a1 = uart_agent_config::type_id::create("cfg_a1");
-        if (!cfg_a1.randomize()) begin
-            `uvm_error("CFG", "Cfg Randomization Failed!")
-        end
-        cfg_a1.calculate_var_ps();
-        cfg_a1.is_master = 1;
-        uvm_config_db#(uart_agent_config)::set(null, "*.env.A1", "uart_agent_config", cfg_a1);
 
-        //Slave Agent Config
-        cfg_a2 = uart_agent_config::type_id::create("cfg_a2");
-        //Set A2 bitrate based on A1 bitrate
-        cfg_a2.bitrate = cfg_a1.bitrate;
-        cfg_a2.calculate_var_ps();
-        cfg_a2.is_master = 0;
-        uvm_config_db#(uart_agent_config)::set(null, "*.env.A2", "uart_agent_config", cfg_a2);
+        fork
+            begin : reset_thread
+                rst = 1'b1;
+                #20ns;
+                rst = 1'b0;
+                #500us;
+                `uvm_info("TOP", "Triggering async reset mid-simulation", UVM_LOW)
+                rst = 1'b1;
+                #50us;
+                rst = 1'b0;
+            end
+            begin : uvm_thread
+                //Master Agent Config 
+                cfg_a1 = uart_agent_config::type_id::create("cfg_a1");
+                if (!cfg_a1.randomize()) begin
+                    `uvm_error("CFG", "Cfg Randomization Failed!")
+                end
+                cfg_a1.calculate_var_ps();
+                cfg_a1.is_master = 1;
+                uvm_config_db#(uart_agent_config)::set(null, "*.env.A1", "uart_agent_config", cfg_a1);
 
-        //Set Vif's for A1 & A2
-        uvm_config_db#(virtual uart_if)::set(null, "*.env.A1", "vif", vif_A1);
-        uvm_config_db#(virtual uart_if)::set(null, "*.env.A2", "vif", vif_A2);
+                //Slave Agent Config
+                cfg_a2 = uart_agent_config::type_id::create("cfg_a2");
+                //Set A2 bitrate based on A1 bitrate
+                cfg_a2.bitrate = cfg_a1.bitrate;
+                cfg_a2.calculate_var_ps();
+                cfg_a2.is_master = 0;
+                uvm_config_db#(uart_agent_config)::set(null, "*.env.A2", "uart_agent_config", cfg_a2);
 
-        //Set Test Name Using +UVM_TESTNAME= 
-        run_test();      
+                //Set Vif's for A1 & A2
+                uvm_config_db#(virtual uart_if)::set(null, "*.env.A1", "vif", vif_A1);
+                uvm_config_db#(virtual uart_if)::set(null, "*.env.A2", "vif", vif_A2);
+
+                //Set Test Name Using +UVM_TESTNAME= 
+                run_test();  
+            end    
+        join
     end
 endmodule : top

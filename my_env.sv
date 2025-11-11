@@ -17,8 +17,5 @@ class my_env extends uvm_env;
 
     virtual function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
-
-        A1.driver.master_ap.connect(A1.monitor.monitor_tx_imp);
-        A2.monitor.slave_ap.connect(A2.driver.driver_rx_imp);
     endfunction : connect_phase
 endclass : my_env

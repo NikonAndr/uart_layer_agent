@@ -6,38 +6,14 @@ class uart_monitor extends uvm_monitor;
 
     time half_bit;
 
-    typedef enum {WAIT_CMD, WAIT_ADDR, WAIT_DATA} monitor_state_e;
-    monitor_state_e slave_state;
-
-    uvm_analysis_port #(uart_transaction) slave_ap;
-    uvm_analysis_imp #(uart_transaction, uart_monitor) monitor_tx_imp;
-
-    uart_transaction master_queue[$];
-    bit got_read_cmd;
-
-    process p_monitor;
-    process p_reset;
+    uvm_analysis_port #(uart_transaction) uart_slave_ap;
+    uvm_analysis_port #(uart_transaction) uart_master_ap;
 
     function new(string name = "uart_monitor", uvm_component parent);
         super.new(name, parent);
-        slave_ap = new("slave_ap", this);
-        monitor_tx_imp = new("monitor_tx_imp", this);
+        uart_slave_ap = new("uart_slave_ap", this);
+        uart_master_ap = new("uart_master_ap", this);
     endfunction
-
-    virtual function void write(uart_transaction uart_tr);
-        uart_transaction uart_tr_clone;
-        uart_tr_clone = uart_transaction::type_id::create("uart_tr_clone");
-        uart_tr_clone = uart_tr;
-
-        if (uart_tr.ft == FRAME_CMD && uart_tr.data[0] == 1'b0) begin
-            got_read_cmd = 1'b1;
-        end 
-
-        if (got_read_cmd && uart_tr.ft == FRAME_ADDR) begin
-            master_queue.push_back(uart_tr_clone);
-            got_read_cmd = 1'b0;
-        end
-    endfunction : write
 
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
@@ -51,9 +27,6 @@ class uart_monitor extends uvm_monitor;
         end
 
         half_bit = (cfg.var_ps * 1ps) / 2;
-
-        slave_state = WAIT_CMD;
-        got_read_cmd = 1'b0;
     endfunction : build_phase
 
     virtual task run_phase(uvm_phase phase);
@@ -61,119 +34,30 @@ class uart_monitor extends uvm_monitor;
 
         forever begin
             fork 
-            begin : drive
-                p_monitor = process::self();
-                if (cfg.is_master) begin
-                    master_thread();
+            begin : monitor
+                forever begin
+                    uart_transaction uart_tr;
+                    capture_uart_frame(uart_tr);
+                    if (cfg.is_master) 
+                        uart_master_ap.write(uart_tr);
+                    else 
+                        uart_slave_ap.write(uart_tr);
                 end
-                else begin
-                    slave_thread();
-                end 
-            end 
 
+            end 
             begin : reset
-                p_reset = process::self();
-                handle_reset();
+                reset_thread();
             end
             join_any
             disable fork;
-
-            if ((p_monitor != null) && (p_monitor.status == process::RUNNING)) p_monitor.kill();
-            if ((p_reset != null) && (p_reset.status == process::RUNNING)) p_reset.kill();
 
             @(negedge vif.rst);
         end 
     endtask : run_phase
 
-    task handle_reset();
-        forever begin
-            @(posedge vif.rst);
-
-            slave_state = WAIT_CMD;
-            master_queue.delete();
-            got_read_cmd = 1'b0;
-        end
-    endtask : handle_reset
-
-    task master_thread();
-        uart_transaction uart_tr;
-        byte addr;
-        byte data;
-
-        forever begin
-            wait (vif.rst == 1'b0);
-            wait (master_queue.size() > 0);
-
-            capture_uart_frame(uart_tr);
-            uart_tr.ft = FRAME_DATA;
-
-            `uvm_info("MONITOR MASTER DBG", $sformatf("master queue addr %s", master_queue[0].conv2str()), UVM_HIGH)
-
-            addr = master_queue.pop_front().data;
-            data = uart_tr.data;
-
-            `uvm_info("MONITOR_MASTER", $sformatf("reg_model_master value updated 0x%00h.0x%00h", addr, data), UVM_MEDIUM)
-            
-        end 
-    endtask : master_thread
-
-    task slave_thread();
-        uart_transaction uart_tr;
-        bit is_write;
-        byte addr;
-        byte data;
-
-        forever begin
-            wait (vif.rst == 1'b0);
-
-            case (slave_state)
-                WAIT_CMD : begin
-                    capture_uart_frame(uart_tr);
-                    uart_tr.ft = FRAME_CMD;
-
-                    if (uart_tr.ft != FRAME_CMD) begin 
-                            `uvm_error("WRONG_FRAME", $sformatf("expected FRAME_CMD, got %s", uart_tr.ft.name()))
-                            continue;
-                    end
-
-                    is_write = uart_tr.data[0];
-                    slave_ap.write(uart_tr);
-                    slave_state = WAIT_ADDR;
-                end
-                WAIT_ADDR : begin
-                    capture_uart_frame(uart_tr);
-                    uart_tr.ft = FRAME_ADDR;
-
-                    if (uart_tr.ft != FRAME_ADDR) begin 
-                            `uvm_error("WRONG_FRAME", $sformatf("expected FRAME_ADDR, got %s", uart_tr.ft.name()))
-                            continue;
-                    end
-
-                    if (is_write) begin
-                        addr = uart_tr.data;
-                    end
-
-                    slave_ap.write(uart_tr);
-                    slave_state = (is_write) ? WAIT_DATA : WAIT_CMD;
-                end
-                WAIT_DATA : begin
-                    capture_uart_frame(uart_tr);
-                    uart_tr.ft = FRAME_DATA;
-
-                    if (uart_tr.ft != FRAME_DATA) begin 
-                            `uvm_error("WRONG_FRAME", $sformatf("expected FRAME_DATA, got %s", uart_tr.ft.name()))
-                            continue;
-                    end
-
-                    data = uart_tr.data;
-                    `uvm_info("MONITOR_SLAVE", $sformatf("reg_model_slave updated 0x%00h.0x%00h", addr, data), UVM_MEDIUM)
-
-                    slave_ap.write(uart_tr);
-                    slave_state = WAIT_CMD;
-                end 
-            endcase
-        end 
-    endtask : slave_thread
+    task reset_thread();
+        @(posedge vif.rst);
+    endtask : reset_thread
 
     task capture_uart_frame(ref uart_transaction uart_tr);
         wait (vif.rx == 1'b0);
@@ -196,7 +80,7 @@ class uart_monitor extends uvm_monitor;
         #half_bit;
         uart_tr.stop_bit = vif.rx;
 
-        `uvm_info("DEBUG MONITOR", $sformatf("monitor captured %s", uart_tr.conv2str()), UVM_HIGH)
+        `uvm_info("DEBUG MONITOR", $sformatf("[%s] monitor captured %s", get_parent().get_name(), uart_tr.convert2str()), UVM_HIGH)
     endtask : capture_uart_frame
 endclass : uart_monitor
 
