@@ -40,8 +40,8 @@ module top;
                 #20ns;
                 rst = 1'b0;
                 #500us;
-                `uvm_info("TOP", "Triggering async reset mid-simulation", UVM_LOW)
-                rst = 1'b1;
+                //`uvm_info("TOP", "Triggering async reset mid-simulation", UVM_LOW)
+                //rst = 1'b1;
                 #50us;
                 rst = 1'b0;
             end
@@ -66,6 +66,7 @@ module top;
                 //Set Vif's for A1 & A2
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.A1", "vif", vif_A1);
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.A2", "vif", vif_A2);
+                uvm_config_db#(virtual uart_if.reset_only)::set(null, "*.env.reg_agent.monitor", "vif", vif_A2);
 
                 //Set Test Name Using +UVM_TESTNAME= 
                 run_test();  

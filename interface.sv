@@ -7,4 +7,5 @@ interface uart_if();
 
     modport driver (input rst, output tx);
     modport monitor (input rst, input rx);
+    modport reset_only (input rst);
 endinterface : uart_if

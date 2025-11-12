@@ -13,6 +13,11 @@ package tb_pkg;
     `include "uart_monitor.sv"
     `include "uart_agent.sv"
 
+    `include "register_transaction.sv"
+    `include "register_monitor.sv"
+    `include "register_agent.sv"
+    `include "register_subscriber.sv"
+
     `include "my_env.sv"
     `include "uart_test.sv"
 
