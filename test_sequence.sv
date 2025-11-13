@@ -6,8 +6,12 @@ class test_sequence extends uvm_sequence #(uart_transaction);
     endfunction 
 
     virtual task body();
-        send_write(8'h00, 8'hAF);
-        send_read(8'h01);
+        send_write(8'h10, 8'hAF);
+        send_write(8'hA0, 8'hAA);
+        send_write(8'h1A, 8'h11);
+        send_read(8'h11);
+        send_read(8'h12);
+        send_read(8'h13);
     endtask : body
 
     task send_write(byte addr, byte data);
@@ -54,5 +58,25 @@ class test_sequence extends uvm_sequence #(uart_transaction);
     endtask : send_read
 endclass : test_sequence
 
-        
-    
+class slave_response_sequence extends uvm_sequence #(uart_transaction);
+    `uvm_object_utils(slave_response_sequence)
+
+    function new(string name = "slave_response_sequence");
+        super.new(name);
+    endfunction
+
+    virtual task body();
+        uart_transaction uart_tr;
+        repeat (3) begin
+            uart_tr = uart_transaction::type_id::create("uart_tr");
+
+            assert(uart_tr.randomize());
+            uart_tr.data = $urandom_range(0, 255);
+            uart_tr.parity_bit = ^uart_tr.data;
+
+            start_item(uart_tr);
+            finish_item(uart_tr);
+        end
+    endtask : body
+endclass : slave_response_sequence
+

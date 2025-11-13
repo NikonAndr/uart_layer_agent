@@ -11,6 +11,8 @@ module top;
     uart_if vif_A2();
     uart_agent_config cfg_a1;
     uart_agent_config cfg_a2;
+    register_agent_config cfg_reg_master;
+    register_agent_config cfg_reg_slave;
 
     bit rst;
 
@@ -63,10 +65,23 @@ module top;
                 cfg_a2.is_master = 0;
                 uvm_config_db#(uart_agent_config)::set(null, "*.env.A2", "uart_agent_config", cfg_a2);
 
+                //Register Agent Master Config
+                cfg_reg_master = register_agent_config::type_id::create("cfg_reg_master");
+                cfg_reg_master.is_master = 1'b1;
+                uvm_config_db#(register_agent_config)::set(null, "*.env.reg_master_agent", "register_agent_config", cfg_reg_master);
+
+                //Register Agent Slave Config
+                cfg_reg_slave = register_agent_config::type_id::create("cfg_reg_slave");
+                cfg_reg_slave.is_master = 1'b0;
+                uvm_config_db#(register_agent_config)::set(null, "*.env.reg_slave_agent", "register_agent_config", cfg_reg_slave);
+
                 //Set Vif's for A1 & A2
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.A1", "vif", vif_A1);
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.A2", "vif", vif_A2);
-                uvm_config_db#(virtual uart_if.reset_only)::set(null, "*.env.reg_agent.monitor", "vif", vif_A2);
+                
+                //Set Vif for reg_master_agent & reg_slave_agent
+                uvm_config_db#(virtual uart_if)::set(null, "*.env.reg_master_agent", "vif", vif_A1);
+                uvm_config_db#(virtual uart_if)::set(null, "*.env.reg_slave_agent", "vif", vif_A2);
 
                 //Set Test Name Using +UVM_TESTNAME= 
                 run_test();  
