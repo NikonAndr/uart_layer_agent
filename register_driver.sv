@@ -31,6 +31,7 @@ class register_driver extends uvm_driver #(register_transaction);
     endfunction : write
     
     virtual task run_phase(uvm_phase phase);
+        register_transaction register_tr;
         super.run_phase(phase);
 
         item_active = 1'b0;
@@ -39,7 +40,6 @@ class register_driver extends uvm_driver #(register_transaction);
             fork 
             begin : drive
                 forever begin
-                    register_transaction register_tr;
                     seq_item_port.get_next_item(register_tr);
                     item_active = 1'b1;
                     if (register_tr.op == REG_WRITE) 
@@ -60,7 +60,7 @@ class register_driver extends uvm_driver #(register_transaction);
             
             //clear sequencer_queue 
             if (item_active) begin
-                seq_item_port.item_done();
+                seq_item_port.item_done(register_tr);
                 item_active = 1'b0;
             end 
 
@@ -101,12 +101,5 @@ class register_driver extends uvm_driver #(register_transaction);
         join_any 
         disable fork;
 
-        if (vif.rst) begin
-            `uvm_warning(get_type_name(), "send_read aborted - reset")
-            return;
-        end  
     endtask : send_read
 endclass : register_driver
-        
-        
-

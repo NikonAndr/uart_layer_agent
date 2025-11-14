@@ -33,11 +33,9 @@ class register_monitor extends uvm_monitor;
 
         forever begin
             @(posedge vif.rst);
-            `uvm_warning(get_type_name(), "reset detected - clearing state machine")
             state = WAIT_CMD;
 
             @(negedge vif.rst);
-            `uvm_info(get_type_name(), "reset released - ready for transactions", UVM_MEDIUM)
         end
     endtask : run_phase
 
@@ -45,7 +43,6 @@ class register_monitor extends uvm_monitor;
         register_transaction register_tr;
 
         if (vif.rst) begin
-              `uvm_info(get_type_name(), "Ignoring transaction during reset", UVM_HIGH)
               return;
         end
 
@@ -82,6 +79,3 @@ class register_monitor extends uvm_monitor;
         endcase 
     endfunction : write
 endclass : register_monitor
-
-        
-

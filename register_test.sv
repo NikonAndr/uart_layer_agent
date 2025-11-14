@@ -34,6 +34,8 @@ class register_test extends uvm_test;
         //Value of R2 should stay 0xA, R2 is RO
         env.reg_model_master.R1.read(status, r0);
         env.reg_model_master.R2.read(status, r1);
+        //wait for the last callback
+        #1;
 
         //Test Log 
         `uvm_info("TEST", $sformatf("Write 0x%00h to R1, 0x%00h to R2, Read 0x%00h from R1, 0x%00h from R2",

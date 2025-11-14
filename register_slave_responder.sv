@@ -51,14 +51,14 @@ class register_slave_responder extends uvm_component;
                                 8'h00 : read_data = reg_model_slave.R1.get_mirrored_value();
                                 8'h01 : read_data = reg_model_slave.R2.get_mirrored_value();
                                 default : begin
-                                    `uvm_warning(get_type_name(), "unknown addr, sending 0x00")
+                                    `uvm_warning("SLAVE_RESPONDER", "unknown addr, sending 0x00")
                                     read_data = 8'h00;
                                 end
                             endcase
                             send_uart_byte(read_data);
                         end 
                         else begin
-                            `uvm_fatal(get_type_name(), "size of read_addr_queue == 0")
+                            `uvm_fatal("SLAVE_RESPONDER", "size of read_addr_queue == 0")
                         end
                     end
                 end

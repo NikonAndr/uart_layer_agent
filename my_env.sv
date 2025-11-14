@@ -1,13 +1,13 @@
 class my_env extends uvm_env;
     `uvm_component_utils(my_env)
 
+    virtual uart_if.reset_only vif;
+
     uart_agent A1;
     uart_agent A2;
 
     register_agent reg_master_agent;
     register_agent reg_slave_agent;
-
-    register_subscriber reg_sub;
 
     register_block reg_model_master;
     register_block reg_model_slave;
@@ -15,20 +15,25 @@ class my_env extends uvm_env;
     register_adapter adapter;
     register_predictor slave_predictor;
 
-    function new(string name = "uart_agent", uvm_component parent);
+    register_scoreboard scoreboard;
+    register_scoreboard_cb scoreboard_cb;
+
+    function new(string name = "my_env", uvm_component parent);
         super.new(name, parent);
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
+        if(!uvm_config_db#(virtual uart_if.reset_only)::get(this, "", "vif", vif)) begin
+            `uvm_fatal("NO_VIF", "env couldn't get vif from cfg db")
+        end
+
         A1 = uart_agent::type_id::create("A1", this);
         A2 = uart_agent::type_id::create("A2", this);
 
         reg_master_agent = register_agent::type_id::create("reg_master_agent", this);
         reg_slave_agent = register_agent::type_id::create("reg_slave_agent", this);
-
-        reg_sub = register_subscriber::type_id::create("reg_sub", this);
 
         //reg_model_master creation & configuration
         reg_model_master = register_block::type_id::create("reg_model_master");
@@ -50,6 +55,11 @@ class my_env extends uvm_env;
 
         //create slave_predictor 
         slave_predictor = register_predictor::type_id::create("slave_predictor", this);
+
+        //create scoreboard & scoreboard callback 
+        scoreboard = register_scoreboard::type_id::create("scoreboard", this);
+        scoreboard_cb = register_scoreboard_cb::type_id::create("scoreboard_cb");
+
     endfunction : build_phase
 
     virtual function void connect_phase(uvm_phase phase);
@@ -75,10 +85,32 @@ class my_env extends uvm_env;
         //UART MASTER MONITOR -> REG DRIVER
         A1.monitor.uart_master_ap.connect(reg_master_agent.driver.uart_master_imp);
 
-        //REG MONITOR -> REG SUBSCRIBER
-        reg_slave_agent.monitor.reg_monitor_ap.connect(reg_sub.analysis_export);
-
         //REG MONITOR -> SLAVE RESPONDER
         reg_slave_agent.monitor.reg_monitor_ap.connect(reg_slave_agent.slave_responder.reg_monitor_imp);
+
+        //scoreboard setup
+        scoreboard.reg_model_master = this.reg_model_master;
+        scoreboard.reg_model_slave = this.reg_model_slave;
+
+        //scoreboard callback setup (callback only from master_model)
+        scoreboard_cb.scoreboard = scoreboard;
+        uvm_reg_field_cb::add(reg_model_master.R1.R1, scoreboard_cb);
+        uvm_reg_field_cb::add(reg_model_master.R2.R2, scoreboard_cb);
+
     endfunction : connect_phase
+
+    virtual task run_phase(uvm_phase phase);
+        super.run_phase(phase);
+
+        forever begin 
+            @(posedge vif.rst);
+            `uvm_info("ENV", "reset asserted", UVM_LOW)
+            scoreboard.in_reset = 1'b1;
+            @(negedge vif.rst);
+            `uvm_info("ENV", "reset released, resetting reg models values", UVM_LOW)
+            scoreboard.in_reset = 1'b0;
+            reg_model_master.reset();
+            reg_model_slave.reset();
+        end
+    endtask : run_phase 
 endclass : my_env

@@ -67,7 +67,7 @@ class uart_driver extends uvm_driver#(uart_transaction);
     endtask : reset_thread
 
     task drive_uart_frame(uart_transaction uart_tr);
-        `uvm_info("DEBUG DRIVER", $sformatf("[%s] driver sent %s", get_parent().get_name(), uart_tr.convert2str()), UVM_HIGH)
+        `uvm_info("UART_DRIVER", $sformatf("[%s] driver sent %s", get_parent().get_name(), uart_tr.convert2str()), UVM_HIGH)
 
         vif.tx <= uart_tr.start_bit;
         #full_bit;

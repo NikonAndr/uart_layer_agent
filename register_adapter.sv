@@ -16,8 +16,8 @@ class register_adapter extends uvm_reg_adapter;
             register_tr.data = rw.data[7:0];
         end
 
-        return register_tr;
         `uvm_info("REG2BUS", "reg2bus triggered", UVM_HIGH)
+        return register_tr;
     endfunction : reg2bus
 
     virtual function void bus2reg(uvm_sequence_item bus_item, ref uvm_reg_bus_op rw);

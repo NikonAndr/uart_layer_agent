@@ -5,7 +5,6 @@ package tb_pkg;
     `include "uvm_macros.svh"
 
     `include "uart_transaction.sv"
-    `include "test_sequence.sv"
     `include "uart_byte_sequence.sv"
     `include "uart_agent_config.sv"
 
@@ -28,9 +27,8 @@ package tb_pkg;
     `include "register_predictor.sv"
     
     `include "register_agent.sv"
-    //`include "register_test_sequence.sv"
 
-    `include "register_subscriber.sv"
+    `include "register_scoreboard.sv"
 
     `include "my_env.sv"
     `include "register_test.sv"

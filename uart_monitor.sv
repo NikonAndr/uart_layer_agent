@@ -80,7 +80,7 @@ class uart_monitor extends uvm_monitor;
         #half_bit;
         uart_tr.stop_bit = vif.rx;
 
-        `uvm_info("DEBUG MONITOR", $sformatf("[%s] monitor captured %s", get_parent().get_name(), uart_tr.convert2str()), UVM_HIGH)
+        `uvm_info("UART_MONITOR", $sformatf("[%s] monitor captured %s", get_parent().get_name(), uart_tr.convert2str()), UVM_HIGH)
     endtask : capture_uart_frame
 endclass : uart_monitor
 

@@ -16,18 +16,6 @@ module top;
 
     bit rst;
 
-    /*initial begin
-        //Reset before running program
-        rst = 1'b1;
-        #50ns;
-        rst = 1'b0;
-    end*/
-    initial begin
-          $dumpfile("uart_test.vcd");  // nazwa pliku
-          $dumpvars(0, top);           // 0 = dump wszystko w module top
-    end
-
-
     assign vif_A1.rst = rst;
     assign vif_A2.rst = rst;
 
@@ -41,9 +29,9 @@ module top;
                 rst = 1'b1;
                 #20ns;
                 rst = 1'b0;
-                #500us;
-                //`uvm_info("TOP", "Triggering async reset mid-simulation", UVM_LOW)
-                //rst = 1'b1;
+                #825us;
+                `uvm_info("TOP", "Triggering async reset mid-simulation", UVM_LOW)
+                rst = 1'b1;
                 #50us;
                 rst = 1'b0;
             end
@@ -79,6 +67,8 @@ module top;
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.A1", "vif", vif_A1);
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.A2", "vif", vif_A2);
                 
+                //Set Vif for env
+                uvm_config_db#(virtual uart_if.reset_only)::set(null, "*.env", "vif", vif_A1.reset_only);
                 //Set Vif for reg_master_agent & reg_slave_agent
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.reg_master_agent", "vif", vif_A1);
                 uvm_config_db#(virtual uart_if)::set(null, "*.env.reg_slave_agent", "vif", vif_A2);
