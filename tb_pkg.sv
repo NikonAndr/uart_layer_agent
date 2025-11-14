@@ -17,11 +17,18 @@ package tb_pkg;
     `include "register_transaction.sv"
     `include "register_agent_config.sv"
     typedef uvm_sequencer#(register_transaction) register_sequencer;
+
     `include "register_monitor.sv"
     `include "register_driver.sv"
+
+    `include "register_model.sv"
+    `include "register_adapter.sv"
+
+    `include "register_slave_responder.sv"
+    `include "register_predictor.sv"
     
     `include "register_agent.sv"
-    `include "register_test_sequence.sv"
+    //`include "register_test_sequence.sv"
 
     `include "register_subscriber.sv"
 

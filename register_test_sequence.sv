@@ -6,13 +6,13 @@ class register_test_sequence extends uvm_sequence #(register_transaction);
     endfunction
 
     virtual task body();
-        send_write(8'h01, 8'h11);
-        send_write(8'h10, 8'h12);
-        send_write(8'h11, 8'h13);
+        //send_write(8'h01, 8'h11);
+        //send_write(8'h10, 8'h12);
+        //send_write(8'h11, 8'h13);
 
-        send_read(8'h11);
-        send_read(8'h12);
-        send_read(8'h13);
+        send_read(8'h00);
+        send_read(8'h01);
+        send_write(8'h01, 8'h11);
     endtask : body
 
     task send_write(byte addr, byte data);

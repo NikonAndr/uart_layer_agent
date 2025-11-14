@@ -7,6 +7,7 @@ class register_agent extends uvm_agent;
     register_driver driver;
     register_monitor monitor;
     register_sequencer reg_sequencer;
+    register_slave_responder slave_responder;
 
 
     function new(string name = "register_agent", uvm_component parent);
@@ -33,8 +34,10 @@ class register_agent extends uvm_agent;
         end
         else begin
             monitor = register_monitor::type_id::create("monitor", this);
+            slave_responder = register_slave_responder::type_id::create("slave_responder", this);
 
             uvm_config_db#(virtual uart_if.reset_only)::set(this, "monitor", "vif", vif.reset_only);
+            uvm_config_db#(virtual uart_if.reset_only)::set(this, "slave_responder", "vif", vif.reset_only);
         end   
     endfunction : build_phase
 

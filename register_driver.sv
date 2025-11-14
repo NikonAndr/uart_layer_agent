@@ -47,7 +47,7 @@ class register_driver extends uvm_driver #(register_transaction);
                     else 
                         send_read(register_tr);
                     
-                    seq_item_port.item_done();
+                    seq_item_port.item_done(register_tr);
                     item_active = 1'b0;
                 end
             end 
