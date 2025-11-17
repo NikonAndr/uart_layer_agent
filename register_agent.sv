@@ -1,7 +1,7 @@
 class register_agent extends uvm_agent;
     `uvm_component_utils(register_agent)
 
-    virtual uart_if vif;
+    virtual uart_if.reset_only vif;
 
     register_agent_config cfg;
     register_driver driver;
@@ -17,7 +17,7 @@ class register_agent extends uvm_agent;
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        if (!uvm_config_db#(virtual uart_if)::get(this, "", "vif", vif)) begin
+        if (!uvm_config_db#(virtual uart_if.reset_only)::get(this, "", "vif", vif)) begin
             `uvm_fatal("NO_VIF", "register_agent couldn't retrieve vif")
         end
 
@@ -29,15 +29,15 @@ class register_agent extends uvm_agent;
             driver = register_driver::type_id::create("driver", this);
             reg_sequencer = register_sequencer::type_id::create("sequencer", this);
 
-            uvm_config_db#(virtual uart_if.reset_only)::set(this, "driver", "vif", vif.reset_only);
+            uvm_config_db#(virtual uart_if.reset_only)::set(this, "driver", "vif", vif);
             uvm_config_db#(register_agent_config)::set(this, "driver", "register_agent_config", cfg);
         end
         else begin
             monitor = register_monitor::type_id::create("monitor", this);
             slave_responder = register_slave_responder::type_id::create("slave_responder", this);
 
-            uvm_config_db#(virtual uart_if.reset_only)::set(this, "monitor", "vif", vif.reset_only);
-            uvm_config_db#(virtual uart_if.reset_only)::set(this, "slave_responder", "vif", vif.reset_only);
+            uvm_config_db#(virtual uart_if.reset_only)::set(this, "monitor", "vif", vif);
+            uvm_config_db#(virtual uart_if.reset_only)::set(this, "slave_responder", "vif", vif);
         end   
     endfunction : build_phase
 
